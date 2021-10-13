@@ -46,7 +46,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         TIL_ENUMSET_VARARG
         bool any(Args... positions) const noexcept
         {
-            auto mask = to_underlying(positions...);
+            const auto mask = to_underlying(positions...);
             return (_data & mask) != 0;
         }
 
@@ -62,7 +62,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         TIL_ENUMSET_VARARG
         bool all(Args... positions) const noexcept
         {
-            auto mask = to_underlying(positions...);
+            const auto mask = to_underlying(positions...);
             return (_data & mask) == mask;
         }
 
@@ -97,7 +97,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         template<typename... Args>
         static constexpr underlying_type to_underlying(Args... positions) noexcept
         {
-            return ((underlying_type(1) << static_cast<underlying_type>(positions)) | ...);
+            return ((underlying_type{ 1 } << static_cast<underlying_type>(positions)) | ...);
         }
 
         template<>
