@@ -1739,7 +1739,7 @@ try
         const auto startY = target.y + halfGridlineWidth;
         const auto endY = target.y + font.height - halfGridlineWidth;
 
-        if (lines.test(GridLines::Left))
+        if (lines.any(GridLines::Left))
         {
             auto x = target.x + halfGridlineWidth;
             for (size_t i = 0; i < cchLine; i++, x += font.width)
@@ -1748,7 +1748,7 @@ try
             }
         }
 
-        if (lines.test(GridLines::Right))
+        if (lines.any(GridLines::Right))
         {
             auto x = target.x + font.width - halfGridlineWidth;
             for (size_t i = 0; i < cchLine; i++, x += font.width)
@@ -1764,13 +1764,13 @@ try
         const auto startX = target.x + halfGridlineWidth;
         const auto endX = target.x + fullRunWidth - halfGridlineWidth;
 
-        if (lines.test(GridLines::Top))
+        if (lines.any(GridLines::Top))
         {
             const auto y = target.y + halfGridlineWidth;
             DrawLine(startX, y, endX, y, lineMetrics.gridlineWidth);
         }
 
-        if (lines.test(GridLines::Bottom))
+        if (lines.any(GridLines::Bottom))
         {
             const auto y = target.y + font.height - halfGridlineWidth;
             DrawLine(startX, y, endX, y, lineMetrics.gridlineWidth);
@@ -1787,17 +1787,17 @@ try
         const auto endX = target.x + fullRunWidth - halfUnderlineWidth;
         const auto y = target.y + lineMetrics.underlineOffset;
 
-        if (lines.test(GridLines::Underline))
+        if (lines.any(GridLines::Underline))
         {
             DrawLine(startX, y, endX, y, lineMetrics.underlineWidth);
         }
 
-        if (lines.test(GridLines::HyperlinkUnderline))
+        if (lines.any(GridLines::HyperlinkUnderline))
         {
             DrawHyperlinkLine(startX, y, endX, y, lineMetrics.underlineWidth);
         }
 
-        if (lines.test(GridLines::DoubleUnderline))
+        if (lines.any(GridLines::DoubleUnderline))
         {
             DrawLine(startX, y, endX, y, lineMetrics.underlineWidth);
             const auto y2 = target.y + lineMetrics.underlineOffset2;
@@ -1805,7 +1805,7 @@ try
         }
     }
 
-    if (lines.test(GridLines::Strikethrough))
+    if (lines.any(GridLines::Strikethrough))
     {
         const auto halfStrikethroughWidth = lineMetrics.strikethroughWidth / 2.0f;
         const auto startX = target.x + halfStrikethroughWidth;

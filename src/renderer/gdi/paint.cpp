@@ -499,7 +499,7 @@ using namespace Microsoft::Console::Render;
         return PatBlt(_hdcMemoryContext, x, y, w, h, PATCOPY);
     };
 
-    if (lines.test(GridLines::Left))
+    if (lines.any(GridLines::Left))
     {
         auto x = ptTarget.x;
         for (size_t i = 0; i < cchLine; i++, x += fontWidth)
@@ -508,7 +508,7 @@ using namespace Microsoft::Console::Render;
         }
     }
 
-    if (lines.test(GridLines::Right))
+    if (lines.any(GridLines::Right))
     {
         // NOTE: We have to subtract the stroke width from the cell width
         // to ensure the x coordinate remains inside the clipping rectangle.
@@ -519,13 +519,13 @@ using namespace Microsoft::Console::Render;
         }
     }
 
-    if (lines.test(GridLines::Top))
+    if (lines.any(GridLines::Top))
     {
         const auto y = ptTarget.y;
         RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y, widthOfAllCells, _lineMetrics.gridlineWidth));
     }
 
-    if (lines.test(GridLines::Bottom))
+    if (lines.any(GridLines::Bottom))
     {
         // NOTE: We have to subtract the stroke width from the cell height
         // to ensure the y coordinate remains inside the clipping rectangle.
@@ -538,14 +538,14 @@ using namespace Microsoft::Console::Render;
         const auto y = ptTarget.y + _lineMetrics.underlineOffset;
         RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y, widthOfAllCells, _lineMetrics.underlineWidth));
 
-        if (lines.test(GridLines::DoubleUnderline))
+        if (lines.any(GridLines::DoubleUnderline))
         {
             const auto y2 = ptTarget.y + _lineMetrics.underlineOffset2;
             RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y2, widthOfAllCells, _lineMetrics.underlineWidth));
         }
     }
 
-    if (lines.test(GridLines::Strikethrough))
+    if (lines.any(GridLines::Strikethrough))
     {
         const auto y = ptTarget.y + _lineMetrics.strikethroughOffset;
         RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y, widthOfAllCells, _lineMetrics.strikethroughWidth));
