@@ -35,5 +35,7 @@ namespace Microsoft.Terminal.Settings.Model
         void ApplyColorScheme(ColorScheme scheme);
 
         ColorScheme AppliedColorScheme;
+
+        Boolean Elevate;
     };
 }

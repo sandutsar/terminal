@@ -69,6 +69,15 @@ namespace winrt::TerminalApp::implementation
         const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
         const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
 
+        // Try to handle auto-elevation
+        if (_maybeElevate(newTerminalArgs, settings, profile))
+        {
+            return S_OK;
+        }
+        // We can't go in the other direction (elevated->unelevated)
+        // unfortunately. This seems to be due to Centennial quirks. It works
+        // unpackaged, but not packaged.
+
         _CreateNewTabWithProfileAndSettings(profile, settings, existingConnection);
 
         const uint32_t tabCount = _tabs.Size();
