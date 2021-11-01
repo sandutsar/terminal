@@ -82,5 +82,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(Boolean, AltGrAliasing);
         INHERITABLE_PROFILE_SETTING(BellStyle, BellStyle);
         INHERITABLE_PROFILE_SETTING(Boolean, Elevate);
+
+        INHERITABLE_PROFILE_SETTING(Windows.Foundation.Collections.IVector<String>, BellSound);
     }
 }
