@@ -44,6 +44,7 @@ static constexpr std::string_view IconKey{ "icon" };
 static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
 static constexpr std::string_view TabColorKey{ "tabColor" };
 static constexpr std::string_view BellStyleKey{ "bellStyle" };
+static constexpr std::string_view UseAtlasEngineKey{ "experimental.useAtlasEngine" };
 static constexpr std::string_view UnfocusedAppearanceKey{ "unfocusedAppearance" };
 static constexpr std::string_view ElevateKey{ "elevate" };
 static constexpr std::string_view BellSoundKey{ "bellSound" };
@@ -137,6 +138,7 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     profile->_AltGrAliasing = _AltGrAliasing;
     profile->_BellStyle = _BellStyle;
     profile->_BellSound = _BellSound;
+    profile->_UseAtlasEngine = _UseAtlasEngine;
     profile->_ConnectionType = _ConnectionType;
     profile->_Origin = _Origin;
     profile->_FontInfo = *fontInfo;
@@ -226,6 +228,7 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, BellStyleKey, _BellStyle);
     JsonUtils::GetValueForKey(json, ElevateKey, _Elevate);
     JsonUtils::GetValueForKey(json, BellSoundKey, _BellSound);
+    JsonUtils::GetValueForKey(json, UseAtlasEngineKey, _UseAtlasEngine);
 
     if (json.isMember(JsonKey(UnfocusedAppearanceKey)))
     {
@@ -380,6 +383,7 @@ Json::Value Profile::ToJson() const
     JsonUtils::SetValueForKey(json, TabColorKey, _TabColor);
     JsonUtils::SetValueForKey(json, BellStyleKey, _BellStyle);
     JsonUtils::SetValueForKey(json, BellSoundKey, _BellSound);
+    JsonUtils::SetValueForKey(json, UseAtlasEngineKey, _UseAtlasEngine);
 
     // Font settings
     const auto fontInfoImpl = winrt::get_self<FontConfig>(_FontInfo);
