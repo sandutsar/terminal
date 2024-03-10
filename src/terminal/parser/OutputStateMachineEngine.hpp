@@ -13,7 +13,6 @@ Abstract:
 #include <functional>
 
 #include "../adapter/termDispatch.hpp"
-#include "telemetry.hpp"
 #include "IStateMachineEngine.hpp"
 
 namespace Microsoft::Console::Render
@@ -26,7 +25,11 @@ namespace Microsoft::Console::VirtualTerminal
     class OutputStateMachineEngine : public IStateMachineEngine
     {
     public:
+        static constexpr size_t MAX_URL_LENGTH = 2 * 1048576; // 2MB, like iTerm2
+
         OutputStateMachineEngine(std::unique_ptr<ITermDispatch> pDispatch);
+
+        bool EncounteredWin32InputModeSequence() const noexcept override;
 
         bool ActionExecute(const wchar_t wch) override;
         bool ActionExecuteFromEscape(const wchar_t wch) override;
@@ -49,9 +52,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool ActionIgnore() noexcept override;
 
-        bool ActionOscDispatch(const wchar_t wch,
-                               const size_t parameter,
-                               const std::wstring_view string) override;
+        bool ActionOscDispatch(const size_t parameter, const std::wstring_view string) override;
 
         bool ActionSs3Dispatch(const wchar_t wch, const VTParameters parameters) noexcept override;
 
@@ -69,8 +70,10 @@ namespace Microsoft::Console::VirtualTerminal
 
         enum EscActionCodes : uint64_t
         {
+            DECBI_BackIndex = VTID("6"),
             DECSC_CursorSave = VTID("7"),
             DECRC_CursorRestore = VTID("8"),
+            DECFI_ForwardIndex = VTID("9"),
             DECKPAM_KeypadApplicationMode = VTID("="),
             DECKPNM_KeypadNumericMode = VTID(">"),
             IND_Index = VTID("D"),
@@ -88,6 +91,9 @@ namespace Microsoft::Console::VirtualTerminal
             LS2R_LockingShift = VTID("}"),
             LS3R_LockingShift = VTID("|"),
             DECAC1_AcceptC1Controls = VTID(" 7"),
+            ACS_AnsiLevel1 = VTID(" L"),
+            ACS_AnsiLevel2 = VTID(" M"),
+            ACS_AnsiLevel3 = VTID(" N"),
             DECDHL_DoubleHeightLineTop = VTID("#3"),
             DECDHL_DoubleHeightLineBottom = VTID("#4"),
             DECSWL_SingleWidthLine = VTID("#5"),
@@ -108,12 +114,15 @@ namespace Microsoft::Console::VirtualTerminal
             CUP_CursorPosition = VTID("H"),
             CHT_CursorForwardTab = VTID("I"),
             ED_EraseDisplay = VTID("J"),
+            DECSED_SelectiveEraseDisplay = VTID("?J"),
             EL_EraseLine = VTID("K"),
+            DECSEL_SelectiveEraseLine = VTID("?K"),
             IL_InsertLine = VTID("L"),
             DL_DeleteLine = VTID("M"),
             DCH_DeleteCharacter = VTID("P"),
             SU_ScrollUp = VTID("S"),
             SD_ScrollDown = VTID("T"),
+            DECST8C_SetTabEvery8Columns = VTID("?W"),
             ECH_EraseCharacters = VTID("X"),
             CBT_CursorBackTab = VTID("Z"),
             HPA_HorizontalPositionAbsolute = VTID("`"),
@@ -126,22 +135,41 @@ namespace Microsoft::Console::VirtualTerminal
             VPR_VerticalPositionRelative = VTID("e"),
             HVP_HorizontalVerticalPosition = VTID("f"),
             TBC_TabClear = VTID("g"),
+            SM_SetMode = VTID("h"),
             DECSET_PrivateModeSet = VTID("?h"),
+            RM_ResetMode = VTID("l"),
             DECRST_PrivateModeReset = VTID("?l"),
             SGR_SetGraphicsRendition = VTID("m"),
             DSR_DeviceStatusReport = VTID("n"),
-            DECSTBM_SetScrollingRegion = VTID("r"),
-            ANSISYSSC_CursorSave = VTID("s"), // NOTE: Overlaps with DECLRMM/DECSLRM. Fix when/if implemented.
+            DSR_PrivateDeviceStatusReport = VTID("?n"),
+            DECSTBM_SetTopBottomMargins = VTID("r"),
+            DECSLRM_SetLeftRightMargins = VTID("s"),
             DTTERM_WindowManipulation = VTID("t"), // NOTE: Overlaps with DECSLPP. Fix when/if implemented.
             ANSISYSRC_CursorRestore = VTID("u"),
             DECREQTPARM_RequestTerminalParameters = VTID("x"),
             DECSCUSR_SetCursorStyle = VTID(" q"),
             DECSTR_SoftReset = VTID("!p"),
+            DECSCA_SetCharacterProtectionAttribute = VTID("\"q"),
             XT_PushSgrAlias = VTID("#p"),
             XT_PopSgrAlias = VTID("#q"),
             XT_PushSgr = VTID("#{"),
             XT_PopSgr = VTID("#}"),
+            DECRQM_RequestMode = VTID("$p"),
+            DECRQM_PrivateRequestMode = VTID("?$p"),
+            DECCARA_ChangeAttributesRectangularArea = VTID("$r"),
+            DECRARA_ReverseAttributesRectangularArea = VTID("$t"),
+            DECCRA_CopyRectangularArea = VTID("$v"),
+            DECRQPSR_RequestPresentationStateReport = VTID("$w"),
+            DECFRA_FillRectangularArea = VTID("$x"),
+            DECERA_EraseRectangularArea = VTID("$z"),
+            DECSERA_SelectiveEraseRectangularArea = VTID("${"),
             DECSCPP_SetColumnsPerPage = VTID("$|"),
+            DECRQUPSS_RequestUserPreferenceSupplementalSet = VTID("&u"),
+            DECIC_InsertColumn = VTID("'}"),
+            DECDC_DeleteColumn = VTID("'~"),
+            DECSACE_SelectAttributeChangeExtent = VTID("*x"),
+            DECRQCRA_RequestChecksumRectangularArea = VTID("*y"),
+            DECINVM_InvokeMacro = VTID("*z"),
             DECAC_AssignColor = VTID(",|"),
             DECPS_PlaySound = VTID(",~")
         };
@@ -149,8 +177,11 @@ namespace Microsoft::Console::VirtualTerminal
         enum DcsActionCodes : uint64_t
         {
             DECDLD_DownloadDRCS = VTID("{"),
+            DECAUPSS_AssignUserPreferenceSupplementalSet = VTID("!u"),
+            DECDMAC_DefineMacro = VTID("!z"),
             DECRSTS_RestoreTerminalState = VTID("$p"),
-            DECRQSS_RequestSetting = VTID("$q")
+            DECRQSS_RequestSetting = VTID("$q"),
+            DECRSPS_RestorePresentationState = VTID("$t"),
         };
 
         enum Vt52ActionCodes : uint64_t
@@ -184,16 +215,15 @@ namespace Microsoft::Console::VirtualTerminal
             SetForegroundColor = 10,
             SetBackgroundColor = 11,
             SetCursorColor = 12,
+            DECSWT_SetWindowTitle = 21,
             SetClipboard = 52,
             ResetForegroundColor = 110, // Not implemented
             ResetBackgroundColor = 111, // Not implemented
             ResetCursorColor = 112,
             FinalTermAction = 133,
+            VsCodeAction = 633,
             ITerm2Action = 1337,
         };
-
-        bool _GetOscTitle(const std::wstring_view string,
-                          std::wstring& title) const;
 
         bool _GetOscSetColorTable(const std::wstring_view string,
                                   std::vector<size_t>& tableIndexes,
@@ -210,6 +240,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool _ParseHyperlink(const std::wstring_view string,
                              std::wstring& params,
                              std::wstring& uri) const;
+
+        bool _CanSeqAcceptSubParam(const VTID id, const VTParameters& parameters) noexcept;
 
         void _ClearLastChar() noexcept;
     };

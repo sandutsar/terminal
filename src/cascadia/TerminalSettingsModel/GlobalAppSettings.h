@@ -23,9 +23,11 @@ Author(s):
 #include "Command.h"
 #include "ColorScheme.h"
 #include "Theme.h"
+#include "NewTabMenuEntry.h"
+#include "RemainingProfilesEntry.h"
 
 // fwdecl unittest classes
-namespace SettingsModelLocalTests
+namespace SettingsModelUnitTests
 {
     class DeserializationTests;
     class ColorSchemeTests;
@@ -42,11 +44,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> ColorSchemes() noexcept;
         void AddColorScheme(const Model::ColorScheme& scheme);
         void RemoveColorScheme(hstring schemeName);
+        Model::ColorScheme DuplicateColorScheme(const Model::ColorScheme& scheme);
 
         Model::ActionMap ActionMap() const noexcept;
 
         static com_ptr<GlobalAppSettings> FromJson(const Json::Value& json);
         void LayerJson(const Json::Value& json);
+        void LayerActionsFrom(const Json::Value& json, const bool withKeybindings = true);
 
         Json::Value ToJson() const;
 
@@ -60,6 +64,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Windows::Foundation::Collections::IMapView<hstring, Model::Theme> Themes() noexcept;
         void AddTheme(const Model::Theme& theme);
         Model::Theme CurrentTheme() noexcept;
+        bool ShouldUsePersistedLayout() const;
+
+        void ExpandCommands(const Windows::Foundation::Collections::IVectorView<Model::Profile>& profiles,
+                            const Windows::Foundation::Collections::IMapView<winrt::hstring, Model::ColorScheme>& schemes);
+
+        bool LegacyReloadEnvironmentVariables() const noexcept { return _legacyReloadEnvironmentVariables; }
 
         INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, UnparsedDefaultProfile, L"");
 
@@ -75,7 +85,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static constexpr bool debugFeaturesDefault{ true };
 #endif
 
-        winrt::guid _defaultProfile;
+        winrt::guid _defaultProfile{};
+        bool _legacyReloadEnvironmentVariables{ true };
         winrt::com_ptr<implementation::ActionMap> _actionMap{ winrt::make_self<implementation::ActionMap>() };
 
         std::vector<SettingsLoadWarnings> _keybindingsWarnings;

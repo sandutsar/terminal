@@ -6,6 +6,8 @@
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
     using CoordType = int32_t;
+    inline constexpr CoordType CoordTypeMin = INT32_MIN;
+    inline constexpr CoordType CoordTypeMax = INT32_MAX;
 
     namespace details
     {
@@ -23,19 +25,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
     struct point
     {
-        // **** TRANSITIONAL ****
-        // The old COORD type uses uppercase member names.
-        // We'll migrate to lowercase ones in the future.
-        union
-        {
-            CoordType x = 0;
-            CoordType X;
-        };
-        union
-        {
-            CoordType y = 0;
-            CoordType Y;
-        };
+        CoordType x = 0;
+        CoordType y = 0;
 
         constexpr point() noexcept = default;
 
@@ -270,6 +261,34 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
         RETURN_WIN32(ERROR_UNHANDLED_EXCEPTION);
     }
+
+    // point_span can be pictured as a "selection" range inside our text buffer. So given
+    // a text buffer of 10x4, a start of 4,1 and end of 7,3 the span might look like this:
+    //   +----------+
+    //   |          |
+    //   |    xxxxxx|
+    //   |xxxxxxxxxx|
+    //   |xxxxxxxx  |
+    //   +----------+
+    // At the time of writing there's a push to make selections have an exclusive end coordinate,
+    // so the interpretation of end might change soon (making this comment potentially outdated).
+    struct point_span
+    {
+        til::point start;
+        til::point end;
+
+        constexpr bool operator==(const point_span& rhs) const noexcept
+        {
+            // `__builtin_memcmp` isn't an official standard, but it's the
+            // only way at the time of writing to get a constexpr `memcmp`.
+            return __builtin_memcmp(this, &rhs, sizeof(rhs)) == 0;
+        }
+
+        constexpr bool operator!=(const point_span& rhs) const noexcept
+        {
+            return __builtin_memcmp(this, &rhs, sizeof(rhs)) != 0;
+        }
+    };
 }
 
 #ifdef __WEX_COMMON_H__
